@@ -4,7 +4,6 @@ import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, fontProviders, logHandlers } from "astro/config";
 import { loadEnv } from "vite";
-
 import { labels } from "./src/i18n/locales";
 
 const locales = Object.keys(labels);
