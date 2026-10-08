@@ -2,21 +2,40 @@
 import Layout from "../../../../layouts/Layout.astro";
 import App from "../../../../layouts/App.svelte";
 import WithSidebar from "../../../../layouts/WithSidebar.svelte";
+import ManagePersonalProfile from "../../../../components/profile/manage/ManagePersonalProfile.svelte";
+import { PROFILE_NAV_ITEMS, PROFILE_PATHS } from "../../../../components/profile/meSections";
+import { setSession } from "../../../../auth/session";
+import { apiUsersIdOrHandleGet, apiUsersIdpersonGet } from "../../../../openapi/client";
 import { goto } from "../../../../utils/navigation";
 
 const { lang, t, session } = Astro.locals;
 
 if (!session) {
-    return goto("/login", { query: { callback: "/me/manage" } });
+    return goto("/login", { query: { callback: PROFILE_PATHS.root } });
 }
 
-const activePath = "/me/manage";
+const activePath = PROFILE_PATHS.root;
+const navItems = PROFILE_NAV_ITEMS;
+
+const path = { id: String(session.user.id) };
+const headers = session.token.asHttpHeaders;
+
+// The session cookie holds a snapshot of the User taken at login, read the current one
+const [{ data: user }, { data: person }] = await Promise.all([
+    apiUsersIdOrHandleGet({ path: { idOrHandle: path.id }, headers }),
+    apiUsersIdpersonGet({ path, headers }),
+]);
+
+// Refresh the cookie too: the names feed the display name shown in the header
+if (user) {
+    setSession(Astro.cookies, { ...session, user });
+}
 ---
 
-<Layout title={t("pages.me.manage.title")}>
-    <App client:load locale={lang} session={session}>
-        <WithSidebar client:idle navItems={[]} {activePath}>
-            <div class="text-content font-body text-base leading-6"></div>
+<Layout title={t("pages.me.manage.personal.title")}>
+    <App client:load locale={lang} session={session} me>
+        <WithSidebar client:idle {navItems} {activePath}>
+            <ManagePersonalProfile client:load user={user ?? session.user} {person} />
         </WithSidebar>
     </App>
 </Layout>

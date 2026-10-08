@@ -35,6 +35,11 @@
         chips?: boolean;
         /** Renders the body of one pill; defaults to the option label. */
         chip?: Snippet<[DropdownOption]>;
+        /**
+         * Extra classes for every list item, e.g. to change the text alignment.
+         * Applied to the <button>/<label> element that holds the option label.
+         */
+        itemClass?: ClassNameValue;
     }
 
     let {
@@ -57,6 +62,7 @@
         isOpen = $bindable(false),
         chips = false,
         chip = undefined,
+        itemClass = undefined,
     }: Props = $props();
 
     const listId = $props.id();
@@ -101,6 +107,7 @@
     function handleItemChange(option: DropdownOption) {
         if (singleSelect) {
             selected = [{ ...option, selected: true }];
+            if (hasSearch && !chips) searchValue = option.label;
             isOpen = false;
         } else if (option.selected && !isSelected(option)) {
             selected = [...selected, option];
@@ -205,15 +212,10 @@
         </button>
     {/if}
 
-    {#if isOpen && renderedItems.length > 0}
-        <div
-            class="absolute top-full left-0 z-100 mt-2 w-full flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
-        >
+    {#if isOpen}
+        {#if renderedItems.length}
             <div
-                id={listId}
-                role="listbox"
-                aria-multiselectable={!singleSelect}
-                class="flex max-h-72 w-full flex-col overflow-y-auto"
+                class="absolute top-full left-0 z-100 mt-2 w-full flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
             >
                 {#each renderedItems as item}
                     <DropdownItem
@@ -223,10 +225,17 @@
                         class={twJoin(
                             item.position === "start" && "rounded-t-lg",
                             item.position === "end" && "rounded-b-lg",
+                            itemClass,
                         )}
                     />
                 {/each}
             </div>
-        </div>
+        {:else if !hasSearch || searchValue.trim()}
+            <p
+                class="text-content absolute top-full left-0 z-100 mt-2 w-full rounded-lg bg-white p-4 text-base shadow-2xl"
+            >
+                {$t("common.noOptions")}
+            </p>
+        {/if}
     {/if}
 </div>
