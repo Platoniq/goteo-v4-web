@@ -3,9 +3,13 @@
     import CreateCard from "./CreateCard.svelte";
     import { t } from "../../../i18n/store";
     import { withoutCache } from "../../../openapi/cacheInterceptor";
-    import { apiProjectBudgetItemsGetCollection, type MoneyInput } from "../../../openapi/client";
+    import {
+        apiProjectBudgetItemsGetCollection,
+        type Money,
+        type ProjectBudgetItem,
+    } from "../../../openapi/client";
     import { formatCurrency } from "../../../utils/currencies";
-    import { addMoney } from "../../../utils/money";
+    import { sumMoney } from "../../../utils/money";
     import Button from "../../library/buttons/Button.svelte";
     import Grid from "../../library/layout/Grid.svelte";
     import Title from "../../library/typography/Title.svelte";
@@ -15,33 +19,22 @@
 
     let {
         draft,
+        onContinue,
     }: {
         draft: ProjectDraftStore;
+        onContinue?: () => void;
     } = $props();
 
     let minBudgetItems = $state(loadMinBudgetItems());
-    let minBudgetMoney = $derived.by(async () => {
-        return minBudgetItems.then((items) => {
-            let minTotal = items[0].money;
-            items.slice(1).forEach((item) => {
-                minTotal = addMoney(item.money, minTotal) as MoneyInput;
-            });
-
-            return minTotal;
-        });
-    });
+    let minBudgetMoney = $derived.by(async () => budgetTotal(await minBudgetItems));
 
     let optBudgetItems = $state(loadOptBudgetItems());
-    let optBudgetMoney = $derived.by(async () => {
-        return optBudgetItems.then((items) => {
-            let optTotal = items[0].money;
-            items.slice(1).forEach((item) => {
-                optTotal = addMoney(item.money, optTotal) as MoneyInput;
-            });
+    let optBudgetMoney = $derived.by(async () => budgetTotal(await optBudgetItems));
 
-            return optTotal;
-        });
-    });
+    /** Budgets start empty, so there is no total to show yet. */
+    function budgetTotal(items: ProjectBudgetItem[]): Money | undefined {
+        return items.length ? sumMoney(items.map((item) => item.money)) : undefined;
+    }
 
     async function loadMinBudgetItems() {
         return withoutCache(() =>
@@ -101,7 +94,7 @@
             <span class="text-secondary text-3xl font-bold">
                 {$t("domain.project.budget.minimum")}:
                 {#await minBudgetMoney then minBudgetMoney}
-                    {formatCurrency(minBudgetMoney)}
+                    {formatCurrency(minBudgetMoney) || "—"}
                 {/await}
             </span>
         </div>
@@ -141,7 +134,7 @@
             <span class="text-secondary text-3xl font-bold">
                 {$t("domain.project.budget.optimum")}:
                 {#await optBudgetMoney then optBudgetMoney}
-                    {formatCurrency(optBudgetMoney)}
+                    {formatCurrency(optBudgetMoney) || "—"}
                 {/await}
             </span>
         </div>
@@ -174,7 +167,8 @@
 </div>
 
 <div class="mt-10 flex">
-    <Button kind="secondary" size="md" class="min-w-50">
+    <!-- TO-DO: Enable navigation to the "About you" step. That step is implemented in a separate task. -->
+    <Button kind="secondary" size="md" class="min-w-50" onclick={() => onContinue?.()}>
         {$t("pages.project.edit.budget.continue")}
     </Button>
 </div>

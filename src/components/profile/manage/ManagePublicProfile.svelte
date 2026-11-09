@@ -15,8 +15,11 @@
     import ProfileIdentityRow from "./ProfileIdentityRow.svelte";
     import ProfileSocialsCard from "./ProfileSocialsCard.svelte";
     import { t } from "../../../i18n/store";
+    import { useFormDraft, restoreFields } from "../../../utils/forms/useFormDraft.svelte";
     import { toSocialLinks, type SocialNetwork } from "../../../utils/socialLinks";
+    import { trackChanges } from "../../../utils/trackChanges.svelte";
     import { zProfileForm, type ProfileForm } from "../../../validation/publicProfileValidation";
+    import Spinner from "../../icons/status/Spinner.svelte";
     import Button from "../../library/buttons/Button.svelte";
     import Toast from "../../library/feedback/Toast.svelte";
     import Title from "../../library/typography/Title.svelte";
@@ -32,19 +35,43 @@
 
     let { user }: Props = $props();
 
-    let form: ProfileForm = $state({
+    const initialDisplayName = user.displayName ?? user.handle;
+
+    // Only the fields edited since the last save travel in the payload
+    const { form, changed, commit } = trackChanges<ProfileForm>({
         avatar: user.avatar || undefined,
         description: user.description ?? "",
         links: toSocialLinks((user.links ?? []).flatMap((link) => link.url ?? [])),
     });
 
-    let displayName = $state(user.displayName ?? user.handle);
+    let displayName = $state(initialDisplayName);
 
     let validation = $state<Partial<Record<FieldName, z.core.$ZodIssue[]>>>({});
     let isSubmitting = $state(false);
     let showSuccess = $state(false);
     let showError = $state(false);
+    let showNoChanges = $state(false);
     let formError = $state("");
+
+    /**
+     * Nothing in this form is sensitive, so all of it can be kept.
+     */
+    const { restored } = useFormDraft("manage-public-profile", () => ({
+        avatar: form.avatar,
+        description: form.description,
+        links: form.links,
+        displayName,
+    }));
+
+    if (restored) {
+        restoreFields(form, restored, ["avatar", "description"]);
+
+        displayName = restored.displayName ?? initialDisplayName;
+
+        if (restored.links) {
+            Object.assign(form.links, restored.links);
+        }
+    }
 
     function validate(field: FieldName) {
         // taxId and organization fields depend on other values, so they go through the refinement
@@ -69,6 +96,12 @@
         validation = {};
         showSuccess = false;
         showError = false;
+        showNoChanges = false;
+
+        if (changed.size === 0) {
+            showNoChanges = true;
+            return;
+        }
 
         const result = zProfileForm.safeParse(form);
 
@@ -83,7 +116,10 @@
 
         isSubmitting = true;
 
-        const { data, error } = await actions.updatePublicProfile(result.data);
+        const { data, error } = await actions.updatePublicProfile({
+            form: result.data,
+            changed: [...changed],
+        });
 
         isSubmitting = false;
 
@@ -105,6 +141,7 @@
         displayName = data.user.displayName ?? data.user.handle;
         // The API resolves each link (scheme, redirects), show what was stored
         form.links = toSocialLinks((data.user.links ?? []).flatMap((link) => link.url ?? []));
+        commit();
         showSuccess = true;
     }
 
@@ -145,13 +182,20 @@
     <Toast floating variant="success" bind:showToast={showSuccess}>
         {$t("pages.me.manage.success")}
     </Toast>
+    <Toast floating variant="notification" bind:showToast={showNoChanges}>
+        {$t("pages.me.manage.noChanges")}
+    </Toast>
     <Toast floating variant="error" bind:showToast={showError}>
         {formError}
     </Toast>
 
     <div class="flex justify-end">
         <Button type="submit" kind="primary" disabled={isSubmitting}>
-            {$t("pages.me.manage.save")}
+            {#if isSubmitting}
+                <Spinner />
+            {:else}
+                {$t("pages.me.manage.save")}
+            {/if}
         </Button>
     </div>
 </form>

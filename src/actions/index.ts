@@ -1,4 +1,6 @@
-import { createBanner, deleteBanner } from "./banners";
+import { deleteBanner, saveBanner } from "./banners";
+import { saveBlogPost, setBlogPostPublished } from "./blog";
+import { saveFeaturedUsers } from "./featuredUsers";
 import { createHomeHero, deleteHomeHero, getHomeHeroData, updateHomeHero } from "./hero";
 import { deleteHighlights, saveHighlights } from "./highlights";
 import { payment } from "./payment";
@@ -8,23 +10,28 @@ import {
     updateReviewAreaRisk,
     updateReviewProjectStatus,
 } from "./projectReview";
+import { saveProposedCampaigns } from "./proposedCampaigns";
 import { updatePublicProfile } from "./publicProfile";
 import { register } from "./register";
 
 export const server = {
     register,
     payment,
-    createBanner,
+    saveBanner,
     deleteBanner,
+    saveBlogPost,
+    setBlogPostPublished,
     createHomeHero,
     deleteHomeHero,
     getHomeHeroData,
     updateHomeHero,
     saveHighlights,
     deleteHighlights,
+    saveFeaturedUsers,
     updatePublicProfile,
     updatePersonalProfile,
     updateReviewAreaRisk,
     updateReviewProjectStatus,
     sendReviewAreaComment,
+    saveProposedCampaigns,
 };

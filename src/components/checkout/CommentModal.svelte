@@ -3,6 +3,8 @@
 
     import { t } from "../../i18n/store";
     import { apiProjectSupportsIdPatch, type ProjectSupport } from "../../openapi/client";
+    import { useFormDraft } from "../../utils/forms/useFormDraft.svelte";
+    import Spinner from "../icons/status/Spinner.svelte";
     import Button from "../library/buttons/Button.svelte";
     import TextArea from "../library/inputs/TextArea.svelte";
 
@@ -21,6 +23,29 @@
     }: Props = $props();
 
     let message = $state("");
+    let isSubmitting = $state(false);
+
+    /** Identifies the draft of this comment, so two of them do not write over each other. */
+    function commentDraftId(support: ProjectSupport): string {
+        return `comment-${support.id ?? "new"}`;
+    }
+
+    /**
+     * The comment written before the language was switched. It is not sensitive, so it can
+     * be kept.
+     */
+    const { restored } = useFormDraft(commentDraftId(support), () => ({ message }));
+
+    /** Kept out of the state on purpose: it must only be applied once. */
+    let pendingMessage: string | undefined = restored?.message;
+
+    function takePendingMessage(): string | undefined {
+        const message = pendingMessage;
+
+        pendingMessage = undefined;
+
+        return message;
+    }
 
     async function handleSubmit(event: SubmitEvent) {
         event.preventDefault();
@@ -28,6 +53,7 @@
         const trimmed = message.trim();
         if (!trimmed || trimmed === support?.message) return;
 
+        isSubmitting = true;
         try {
             await apiProjectSupportsIdPatch({
                 baseUrl: "/api/relay",
@@ -45,12 +71,14 @@
             open = false;
         } catch (e) {
             console.error("PATCH FAILED", e);
+        } finally {
+            isSubmitting = false;
         }
     }
 
     $effect(() => {
         if (open) {
-            message = support?.message ?? "";
+            message = takePendingMessage() ?? support?.message ?? "";
         }
     });
 </script>
@@ -68,8 +96,16 @@
             labelText={$t("pages.checkout.verify.approved.formReview.commentModal.label")}
             bind:value={message}
         />
-        <Button type="submit" class="w-full self-center md:w-fit md:self-end">
-            {$t("common.save")}
+        <Button
+            type="submit"
+            class="w-full self-center md:w-fit md:self-end"
+            disabled={isSubmitting}
+        >
+            {#if isSubmitting}
+                <Spinner />
+            {:else}
+                {$t("common.save")}
+            {/if}
         </Button>
     </form>
 </Modal>
