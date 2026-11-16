@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
     import { actions, isInputError } from "astro:actions";
+    import { untrack } from "svelte";
 
     import FormNotice from "./FormNotice.svelte";
     import ProfileHeader from "./ProfileHeader.svelte";
@@ -22,6 +23,7 @@
     } from "../../../openapi/client";
     import { getCountries } from "../../../utils/countries";
     import { useFormDraft, restoreFields } from "../../../utils/forms/useFormDraft.svelte";
+    import { normalizeForMatch } from "../../../utils/highlights";
     import { type SocialNetwork } from "../../../utils/socialLinks";
     import { getTerritoryDisplayName, UNKNOWN_COUNTRY_CODE } from "../../../utils/territory";
     import { trackChanges } from "../../../utils/trackChanges.svelte";
@@ -36,6 +38,7 @@
     import ActionableButton from "../../library/buttons/ActionableButton.svelte";
     import Button from "../../library/buttons/Button.svelte";
     import Card from "../../library/cards/Card.svelte";
+    import DropdownSearch from "../../library/dropdown/DropdownSearch.svelte";
     import Toast from "../../library/feedback/Toast.svelte";
     import Checkbox from "../../library/inputs/Checkbox.svelte";
     import PasswordInput from "../../library/inputs/PasswordInput.svelte";
@@ -44,6 +47,7 @@
     import TextInput from "../../library/inputs/TextInput.svelte";
     import Title from "../../library/typography/Title.svelte";
 
+    import type { DropdownOption } from "../../library/dropdown/dropdown.types";
     import type z from "zod";
 
     type FieldName = keyof PersonalProfileForm;
@@ -56,40 +60,75 @@
 
     let { user, person, organization }: Props = $props();
 
+    // Seeded once: later prop changes must not overwrite what the user is editing
+    const initial = untrack(() => ({ user, person, organization }));
+
     const country =
-        user.territory?.country === UNKNOWN_COUNTRY_CODE ? "" : (user.territory?.country ?? "");
+        initial.user.territory?.country === UNKNOWN_COUNTRY_CODE
+            ? ""
+            : (initial.user.territory?.country ?? "");
 
     // Changing the profile kind belongs to the public section, here it only routes the tax id
-    const isOrganization = user.type === "organization";
+    const isOrganization = initial.user.type === "organization";
 
     // Only the fields edited since the last save travel in the payload
     const { form, changed, commit } = trackChanges<PersonalProfileForm>({
-        handle: user.handle,
-        firstName: person?.firstName ?? "",
-        lastName: person?.lastName ?? "",
-        taxId: (isOrganization ? organization?.taxId : person?.taxId) ?? "",
+        handle: initial.user.handle,
+        firstName: initial.person?.firstName ?? "",
+        lastName: initial.person?.lastName ?? "",
+        taxId: (isOrganization ? initial.organization?.taxId : initial.person?.taxId) ?? "",
         type: isOrganization ? "organization" : "individual",
-        legalName: organization?.legalName ?? "",
-        businessName: organization?.businessName ?? "",
+        legalName: initial.organization?.legalName ?? "",
+        businessName: initial.organization?.businessName ?? "",
         country,
-        subLvl1: user.territory?.subLvl1 ?? "",
-        subLvl2: user.territory?.subLvl2 ?? "",
-        shareLocation: user.shareLocation ?? false,
-        referralSource: user.referralSource ?? "",
-        taxIdType: (isOrganization ? organization?.taxIdType : person?.taxIdType) ?? "",
-        birthYear: person?.birthYear ? String(person.birthYear) : "",
-        gender: person?.gender ?? "",
-        legalForm: organization?.legalForm ?? "",
-        publicEntity: organization?.publicEntity ?? false,
+        subLvl1: initial.user.territory?.subLvl1 ?? "",
+        subLvl2: initial.user.territory?.subLvl2 ?? "",
+        shareLocation: initial.user.shareLocation ?? false,
+        referralSource: initial.user.referralSource ?? "",
+        taxIdType:
+            (isOrganization ? initial.organization?.taxIdType : initial.person?.taxIdType) ?? "",
+        birthYear: initial.person?.birthYear ? String(initial.person.birthYear) : "",
+        gender: initial.person?.gender ?? "",
+        legalForm: initial.organization?.legalForm ?? "",
+        publicEntity: initial.organization?.publicEntity ?? false,
     });
 
     const currentYear = new Date().getFullYear();
     const birthYears = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
 
     // Subdivisions are ISO codes, show them as "Subdivision, Country" in the search box
-    const initialLocality = country ? getTerritoryDisplayName(user.territory!, $locale) : "";
+    const initialLocality = country
+        ? getTerritoryDisplayName(initial.user.territory!, $locale)
+        : "";
     let locality = $state(initialLocality);
-    let countries = $derived(getCountries($locale));
+
+    const countryOptions: DropdownOption[] = $derived(
+        getCountries($locale).map(({ code, name }) => ({ id: code, label: name, selected: false })),
+    );
+    const currentCountry = $derived(countryOptions.find((option) => option.id === form.country));
+
+    let countrySearch = $state("");
+
+    // The locality input can also set the country, so the shown text follows `form.country`.
+    $effect(() => {
+        countrySearch = currentCountry?.label ?? "";
+    });
+
+    // Opening the dropdown searches the shown label: list every country instead of only that one.
+    // Matching ignores accents (`normalizeForMatch`), like the resource search does.
+    function searchCountries(query: string): DropdownOption[] {
+        const needle = normalizeForMatch(query);
+
+        if (needle === normalizeForMatch(currentCountry?.label ?? "")) return countryOptions;
+
+        return countryOptions.filter((option) => normalizeForMatch(option.label).includes(needle));
+    }
+
+    // Picking and clearing both write `selected`; the tax id rules depend on the country.
+    function setCountry(picked: DropdownOption[]) {
+        form.country = picked[0]?.id ?? "";
+        validate("taxId");
+    }
 
     let validation = $state<Partial<Record<FieldName, z.core.$ZodIssue[]>>>({});
     let isSubmitting = $state(false);
@@ -99,8 +138,8 @@
     let formError = $state("");
 
     /**
-     * Everything the form holds but the tax id, which is fiscal data and is left out on
-     * purpose: the visitor types it again.
+     * Everything the form holds but the tax id and its type, which are fiscal data and are
+     * left out on purpose: the visitor types them again.
      */
     const { restored } = useFormDraft("manage-personal-profile", () => ({
         handle: form.handle,
@@ -112,27 +151,19 @@
         country: form.country,
         subLvl1: form.subLvl1,
         subLvl2: form.subLvl2,
-        address: form.address,
-        shareLocation,
+        shareLocation: form.shareLocation,
+        referralSource: form.referralSource,
+        birthYear: form.birthYear,
+        gender: form.gender,
+        legalForm: form.legalForm,
+        publicEntity: form.publicEntity,
         locality,
     }));
 
     if (restored) {
-        restoreFields(form, restored, [
-            "handle",
-            "firstName",
-            "lastName",
-            "type",
-            "legalName",
-            "businessName",
-            "country",
-            "subLvl1",
-            "subLvl2",
-            "address",
-        ]);
-
-        shareLocation = restored.shareLocation ?? false;
-        locality = restored.locality ?? initialLocality;
+        const { locality: restoredLocality, ...fields } = restored;
+        restoreFields(form, fields);
+        locality = restoredLocality ?? initialLocality;
     }
 
     let newPassword = $state("");
@@ -326,17 +357,27 @@
                 </div>
             {/if}
 
-            <Select
-                bind:value={form.country}
-                labelText={$t("pages.me.manage.info.country")}
-                onChange={() => validate("taxId")}
-                disabled={isSubmitting}
-            >
-                <option value="">{$t("common.select")}</option>
-                {#each countries as { code, name } (code)}
-                    <option value={code}>{name}</option>
-                {/each}
-            </Select>
+            <!-- `DropdownSearch` has no `disabled` prop, and a plain fieldset keeps the field inert
+                 while saving, like every other input in the form. -->
+            <fieldset class="relative m-0 min-w-0 border-0 p-0" disabled={isSubmitting}>
+                <span
+                    class="text-secondary absolute top-0 left-4 z-10 -translate-y-1/2 bg-white px-1 text-sm font-medium"
+                    class:opacity-50={isSubmitting}
+                >
+                    {$t("pages.me.manage.info.country")}
+                </span>
+                <DropdownSearch
+                    variant="basic"
+                    singleSelect
+                    clearable
+                    debounceMs={0}
+                    search={searchCountries}
+                    placeholder={$t("common.select")}
+                    bind:value={countrySearch}
+                    bind:selected={() => (currentCountry ? [currentCountry] : []), setCountry}
+                    searchClasses="border-secondary h-14 shadow-none"
+                />
+            </fieldset>
             <div class="relative">
                 <span
                     class="text-secondary absolute top-0 left-4 z-10 -translate-y-1/2 bg-white px-1 text-sm font-medium"
