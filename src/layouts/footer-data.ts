@@ -101,10 +101,10 @@ const NAV_COLUMNS = [
         titleKey: "common.footer.navigation.forUsers.title",
         links: [
             { href: "/wallet", labelKey: "common.footer.navigation.forUsers.rechargeWallet" },
-            // GOTEO-OC-DONATION-CERTIFICATE: "Descarga certificado" link is exclusive to
-            // the donation-certificate feature of Goteo under Fundación Platoniq, hidden
-            // in the open-core.
-            // { href: "/certificate", labelKey: "common.footer.navigation.forUsers.downloadCertificate" },
+            {
+                href: "/about/certificate",
+                labelKey: "common.footer.navigation.forUsers.downloadCertificate",
+            },
             {
                 href: "/funds",
                 labelKey: "common.footer.navigation.forUsers.accessComplementaryFunds",
