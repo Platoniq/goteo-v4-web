@@ -73,12 +73,7 @@
     let filterProjectName = $state("");
     let filterPaymentMethod = $state("");
     let filterInterest = $state("");
-    /* GOTEO-OC-DONATION-CERTIFICATE: certificate recipient filter is exclusive to the
-     * donation-certificate feature of Goteo under Fundación Platoniq, hidden in the
-     * open-core. Re-enable when a feature toggle exists. Do not delete.
-     *
-     * let filterCertificate = $state("");
-     */
+    let filterCertificate = $state("");
     let filterPreferredLanguage = $state("");
     let filterNewsletterLanguage = $state("");
     let filterStatus = $state("");
@@ -157,8 +152,7 @@
                       projectName: filterProjectName,
                       paymentMethod: filterPaymentMethod,
                       interest: filterInterest,
-                      /* GOTEO-OC-DONATION-CERTIFICATE: certificate field, hidden in open-core. Re-enable with feature toggle.
-                       * certificate: filterCertificate, */
+                      certificate: filterCertificate,
                       preferredLanguage: filterPreferredLanguage,
                       newsletterLanguage: filterNewsletterLanguage,
                       status: filterStatus,

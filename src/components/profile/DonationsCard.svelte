@@ -171,11 +171,6 @@
     </div>
 {/snippet}
 
-<!-- GOTEO-OC-DONATION-CERTIFICATE: secondary action "Solicitar certificado" is exclusive to the
-     donation-certificate feature of Goteo under Fundación Platoniq, hidden in the open-core.
-     Re-enable when a feature toggle exists. Do not delete.
-     <BaseActivityCard ... secondaryActionLabel="pages.me.donations.certificate"
-        secondaryActionHref="#" ... /> -->
 {#if donations}
     {#await donations}
         {@render loadingShell()}
@@ -192,6 +187,8 @@
             illustrationPath="/images/profile/ilustration-donations.png"
             primaryActionLabel="pages.me.donations.viewAll"
             primaryActionHref="/me#donated-projects"
+            secondaryActionLabel="pages.me.donations.certificate"
+            secondaryActionHref="#"
             isEmpty={!summary || summary.count === 0}
             emptyMessageKey="pages.me.donations.empty"
             emptyCtaLabel="pages.me.donations.explore"

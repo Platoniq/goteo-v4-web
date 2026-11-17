@@ -118,15 +118,11 @@
         >
             <div class="text-content min-h-5 text-sm"></div>
             <div class="flex flex-row flex-wrap items-center justify-start gap-8 md:justify-end">
-                <!-- GOTEO-OC-DONATION-CERTIFICATE: "Certificados" button is exclusive to the
-                     donation-certificate feature of Goteo under Fundación Platoniq, hidden in
-                     the open-core. Re-enable when a feature toggle exists. Do not delete.
                 <button
                     class="text-secondary cursor-pointer border-0 bg-transparent font-bold outline-none"
                 >
                     {$t("pages.admin.projects.table.rows.details.btns.certificates")}
                 </button>
-                -->
                 <!-- Hidden until the API persists annotations: the modal only keeps them in memory.
                 <button
                     onclick={onOpenAnnotationsModal}
