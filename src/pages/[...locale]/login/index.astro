@@ -1,36 +1,27 @@
 ---
-import CSRF from "csrf";
+import Layout from "../../../layouts/Layout.astro";
+import App from "../../../layouts/App.svelte";
+import Login from "../../../components/checkout/Login.svelte";
 import { isExpired } from "../../../auth/session";
+import { goto } from "../../../utils/navigation";
 
-const wantsCallback = Astro.url.searchParams.get("callback");
-if (wantsCallback) {
-    Astro.cookies.delete("callback", { path: "/" });
-    Astro.cookies.set("callback", wantsCallback, { path: "/" });
-}
+const { t, lang, session } = Astro.locals;
 
-const { session } = Astro.locals;
+// Only same-site paths, to avoid open redirects
+const param = Astro.url.searchParams.get("callback");
+const callback = param?.startsWith("/") && !param.startsWith("//") ? param : undefined;
+
 if (session && !isExpired(session)) {
-    return Astro.redirect(wantsCallback || "/");
+    return goto(callback || "/");
 }
-
-const oauth2Authorize = new URL("/oauth/authorize", import.meta.env.PUBLIC_API_URL);
-
-oauth2Authorize.searchParams.set("client_id", import.meta.env.OAUTH2_CLIENT_ID);
-oauth2Authorize.searchParams.set("redirect_uri", new URL("/login/callback", Astro.url).toString());
-oauth2Authorize.searchParams.set("response_type", "code");
-oauth2Authorize.searchParams.set("scope", "email");
-
-const csrf = new CSRF();
-const csrfToken = csrf.create(import.meta.env.OAUTH2_CLIENT_SECRET);
-
-Astro.cookies.delete("oauth-csrf", { path: "/" });
-Astro.cookies.set("oauth-csrf", csrfToken, {
-    path: "/",
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-});
-oauth2Authorize.searchParams.set("state", csrfToken);
-
-return Astro.redirect(oauth2Authorize.toString());
 ---
+
+<Layout title={t("pages.login.title")} description={t("pages.login.description")}>
+    <App client:load locale={lang} session={session} class="mb-20">
+        <div class="wrapper pt-6">
+            <div class="mx-auto max-w-121">
+                <Login client:load standalone callback={callback} />
+            </div>
+        </div>
+    </App>
+</Layout>
