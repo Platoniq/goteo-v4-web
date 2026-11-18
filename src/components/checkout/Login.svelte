@@ -3,12 +3,31 @@
 
     import { t } from "../../i18n/store";
     import { useFormDraft } from "../../utils/forms/useFormDraft.svelte";
+    import Spinner from "../icons/status/Spinner.svelte";
+    import Button from "../library/buttons/Button.svelte";
     import Toast from "../library/feedback/Toast.svelte";
     import Checkbox from "../library/inputs/Checkbox.svelte";
     import PasswordInput from "../library/inputs/PasswordInput.svelte";
     import TextInput from "../library/inputs/TextInput.svelte";
     import Thtml from "../library/typography/Thtml.svelte";
     import Title from "../library/typography/Title.svelte";
+
+    interface Props {
+        /** Same-site path to go to after login, already sanitized by the page */
+        callback?: string;
+        /** Standalone /login page: no checkout wording, no terms box, own submit button */
+        standalone?: boolean;
+    }
+
+    let { callback, standalone = false }: Props = $props();
+
+    let registerLink = $derived.by(() => {
+        if (!standalone) {
+            return "/checkout/register?callback=/checkout/shipping";
+        }
+
+        return callback ? `/register?callback=${encodeURIComponent(callback)}` : "/register";
+    });
 
     let identifier = $state("");
     let password = $state("");
@@ -40,7 +59,7 @@
         showErrorToast = false;
         errorMessage = "";
 
-        if (!acceptTerms) {
+        if (!standalone && !acceptTerms) {
             errorMessage = $t("pages.checkout.login.error.requireTerms");
             showErrorToast = true;
             settle();
@@ -65,6 +84,11 @@
                 return;
             }
 
+            if (standalone) {
+                navigate(callback || "/");
+                return;
+            }
+
             const urlParams = new URLSearchParams(window.location.search);
             const callbackUrl = urlParams.get("callback");
 
@@ -84,10 +108,10 @@
 <div class="flex w-full flex-col items-start gap-10 self-stretch">
     <div class="flex flex-col items-start gap-10 self-stretch">
         <Title level={1} variant="headline" class="self-stretch">
-            {$t("pages.checkout.login.title")}
+            {standalone ? $t("pages.login.title") : $t("pages.checkout.login.title")}
         </Title>
         <p class="text-content self-stretch text-base leading-6 font-normal">
-            {$t("pages.checkout.login.description")}
+            {standalone ? $t("pages.login.description") : $t("pages.checkout.login.description")}
         </p>
     </div>
 
@@ -97,7 +121,7 @@
                 {$t("pages.checkout.login.loginOr")}
             </h2>
             <a
-                href="/checkout/register?callback=/checkout/shipping"
+                href={registerLink}
                 class="bg-variant1 text-secondary line-clamp-1 flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-4 py-2 text-base leading-6 font-bold text-ellipsis"
             >
                 {$t("pages.checkout.login.registerBtnLabel")}
@@ -138,28 +162,42 @@
                     </a>
                 </p>
 
-                <div class="flex max-w-121 flex-initial flex-col items-start gap-5 self-stretch">
-                    <Checkbox
-                        id="policies"
-                        bind:checked={acceptTerms}
-                        disabled={isSubmitting}
-                        required
+                {#if !standalone}
+                    <div
+                        class="flex max-w-121 flex-initial flex-col items-start gap-5 self-stretch"
                     >
-                        <span>
-                            <Thtml
-                                key="pages.checkout.login.form.termsCheckbox"
-                                vars={{
-                                    link: '<a href="/terms" class="text-secondary underline font-bold hover:opacity-80">',
-                                    _link: "</a>",
-                                }}
-                            />
-                        </span>
-                    </Checkbox>
-                </div>
+                        <Checkbox
+                            id="policies"
+                            bind:checked={acceptTerms}
+                            disabled={isSubmitting}
+                            required
+                        >
+                            <span>
+                                <Thtml
+                                    key="pages.checkout.login.form.termsCheckbox"
+                                    vars={{
+                                        link: '<a href="/terms" class="text-secondary underline font-bold hover:opacity-80">',
+                                        _link: "</a>",
+                                    }}
+                                />
+                            </span>
+                        </Checkbox>
+                    </div>
+                {/if}
             </div>
         </div>
 
-        <button type="submit" class="hidden" aria-hidden="true"></button>
+        {#if standalone}
+            <Button type="submit" class="w-fit" disabled={isSubmitting}>
+                {#if isSubmitting}
+                    <Spinner />
+                {:else}
+                    {$t("pages.login.submit")}
+                {/if}
+            </Button>
+        {:else}
+            <button type="submit" class="hidden" aria-hidden="true"></button>
+        {/if}
     </form>
 
     {#if showErrorToast}

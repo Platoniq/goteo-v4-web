@@ -16,7 +16,6 @@
         error?: string;
         required?: boolean;
         disabled?: boolean;
-        validate?: boolean;
         onInput?: (event: Event) => void;
         onBlur?: (event?: FocusEvent) => void;
         onFocus?: (event?: FocusEvent) => void;
@@ -34,7 +33,6 @@
         error = undefined,
         required = false,
         disabled = false,
-        validate = false,
         onInput = undefined,
         onBlur = undefined,
         onFocus = undefined,
@@ -58,7 +56,7 @@
 <div class={twMerge("relative", classes)}>
     <div
         class={twMerge(
-            "border-secondary relative flex h-14 w-full items-center justify-between rounded-lg border bg-white p-4 transition-all",
+            "border-secondary relative flex h-14 w-full items-center rounded-lg border bg-white transition-all",
             !error && "focus-within:ring-secondary focus-within:ring-1",
             error && "border-tertiary ring-tertiary ring-1",
             disabled && "bg-grey cursor-not-allowed opacity-50",
@@ -91,13 +89,13 @@
             onfocus={onFocus}
             aria-invalid={error ? "true" : "false"}
             aria-describedby={error ? errorId : helperText ? helperId : undefined}
-            class="text-content m-0 flex-1 rounded-lg border-none bg-white p-0 outline-none focus:ring-0 disabled:cursor-not-allowed"
+            class="text-content m-0 h-full w-full rounded-lg border-none bg-transparent p-4 pr-12 outline-none focus:ring-0 disabled:cursor-not-allowed"
         />
 
         <button
             type="button"
             onclick={togglePassword}
-            class="text-secondary cursor-pointer"
+            class="text-secondary absolute right-4 cursor-pointer"
             {disabled}
             aria-label={showPassword
                 ? $t("domain.passwordInput.hide")
