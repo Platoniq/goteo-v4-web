@@ -12,6 +12,8 @@ import {
 import type { Money, Project } from "../../../openapi/client";
 import { extractId } from "../../../utils/extractId";
 import { getDefaultCurrency } from "../../../utils/consts";
+import { sumMoney } from "../../../utils/money";
+import { formatCurrency } from "../../../utils/currencies";
 import type { Campaign } from "../../../types/campaign";
 
 const { t, lang, session } = Astro.locals;
@@ -47,6 +49,7 @@ const fetchBalance = async (accountingIri?: string): Promise<Money | undefined> 
 };
 
 let donatedProjects: Campaign[] = [];
+let otherDonations: { title: string; amount: Money }[] = [];
 let suggestedProjects: Campaign[] = [];
 let userEmail = "";
 
@@ -67,12 +70,13 @@ if (session && checkoutId) {
         });
 
         if (checkout?.charges) {
+            const charges = checkout.charges as any[];
             // Several charges can target the same accounting (one per reward), so dedupe the targets.
             const targetAccountingUrls = [
-                ...new Set(checkout.charges.map((charge: any) => charge.target).filter(Boolean)),
+                ...new Set(charges.map((charge) => charge.target).filter(Boolean)),
             ] as string[];
 
-            const projectPromises = targetAccountingUrls.map(async (accountingUrl: string) => {
+            const targetPromises = targetAccountingUrls.map(async (accountingUrl: string) => {
                 try {
                     const accountingId = extractId(accountingUrl);
                     if (!accountingId) return null;
@@ -84,44 +88,68 @@ if (session && checkoutId) {
 
                     if (!accounting) return null;
 
-                    // Skips non-project recipients, such as the tipjar.
-                    if (!accounting.owner?.includes("/v4/projects/")) return null;
-
-                    const projectId = extractId(accounting.owner);
-
-                    // This is the project's own accounting, so its balance is the raised amount.
-                    return projectId
-                        ? { projectId, obtained: accounting.balance as Money | undefined }
-                        : null;
+                    return { accountingUrl, accounting };
                 } catch (error) {
                     console.error("Error fetching accounting or extracting project ID:", error);
                     return null;
                 }
             });
 
-            const targets = (await Promise.all(projectPromises)).filter((t) => t !== null);
+            const targets = (await Promise.all(targetPromises)).filter((t) => t !== null) as {
+                accountingUrl: string;
+                accounting: any;
+            }[];
 
-            const projectDataPromises = targets.map(async ({ projectId, obtained }) => {
-                try {
-                    const { data: project } = await apiProjectsIdOrSlugGet({
-                        path: { idOrSlug: projectId },
-                        headers: authHeaders,
-                    });
+            const projectTargets = targets.filter((t) =>
+                t.accounting.owner?.includes("/v4/projects/"),
+            );
 
-                    return project ? mapProjectToCard(project, obtained) : null;
-                } catch (error) {
-                    console.error("Error fetching project data:", error);
-                    return null;
-                }
-            });
+            const projectDataPromises = projectTargets.map(
+                async ({ accounting, accountingUrl }) => {
+                    try {
+                        const projectId = extractId(accounting.owner);
+                        if (!projectId) return null;
+
+                        const { data: project } = await apiProjectsIdOrSlugGet({
+                            path: { idOrSlug: projectId },
+                            headers: authHeaders,
+                        });
+
+                        // This is the project's own accounting, so its balance is the raised amount.
+                        return project
+                            ? mapProjectToCard(project, accounting.balance as Money | undefined)
+                            : null;
+                    } catch (error) {
+                        console.error("Error fetching project data:", error);
+                        return null;
+                    }
+                },
+            );
 
             donatedProjects = (await Promise.all(projectDataPromises)).filter(
                 Boolean,
             ) as Campaign[];
+
+            const nonProjectTargets = targets.filter(
+                (t) => !t.accounting.owner?.includes("/v4/projects/"),
+            );
+            for (const { accountingUrl } of nonProjectTargets) {
+                const related = charges.filter((charge) => charge.target === accountingUrl);
+                if (related.length === 0) continue;
+
+                const title =
+                    related.find((charge) => charge.title)?.title ||
+                    t("pages.checkout.tipjar.standaloneTitle");
+                const amount = sumMoney(related.map((charge) => charge.money as Money));
+                if (amount) {
+                    otherDonations.push({ title, amount });
+                }
+            }
         }
     } catch (error) {
         console.error("Error loading donated projects:", error);
         donatedProjects = [];
+        otherDonations = [];
     }
 }
 
@@ -199,6 +227,23 @@ try {
                     </div>
                 </div>
             -->
+
+                {
+                    otherDonations.length > 0 && (
+                        <div class="flex w-full flex-col items-start gap-4 self-stretch md:gap-6">
+                            {otherDonations.map((donation) => (
+                                <div class="border-grey flex w-full items-center justify-between gap-4 rounded-2xl border bg-white p-4 md:p-6">
+                                    <p class="text-secondary text-lg font-bold md:text-xl">
+                                        {donation.title}
+                                    </p>
+                                    <p class="text-secondary text-xl font-bold md:text-2xl">
+                                        {formatCurrency(donation.amount)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )
+                }
 
                 {
                     donatedProjects.length > 0 && (

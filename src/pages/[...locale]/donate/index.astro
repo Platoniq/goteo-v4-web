@@ -1,0 +1,18 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import App from "../../../layouts/App.svelte";
+import FoundationDonate from "../../../components/checkout/FoundationDonate.svelte";
+
+const { t, lang, session } = Astro.locals;
+---
+
+<Layout
+    title={t("pages.checkout.tipjar.standaloneTitle")}
+    description={t("pages.checkout.tipjar.standaloneDescription")}
+>
+    <App client:load locale={lang} session={session} class="mb-20">
+        <div class="wrapper pt-6">
+            <FoundationDonate client:load />
+        </div>
+    </App>
+</Layout>

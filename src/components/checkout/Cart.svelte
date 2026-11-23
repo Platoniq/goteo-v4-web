@@ -20,22 +20,20 @@
         cart.removeItem(item.key);
     }
 
-    function getItems() {
-        let items = Object.entries($cartByRecipient);
-
-        if (tipping.isEnabled) {
-            items = items.filter((item) => item[0] !== tipping.tipjarIri);
-        }
-
-        return items;
-    }
+    const mainItems = $derived(
+        Object.entries($cartByRecipient).filter(
+            ([recipient]) => !tipping.isEnabled || recipient !== tipping.tipjarIri,
+        ),
+    );
+    const tipItems = $derived($cartByRecipient[tipping.tipjarIri] ?? []);
+    const standaloneFoundationDonation = $derived(tipping.isEnabled && mainItems.length === 0);
 </script>
 
 {#if !$checkoutHydrated}
     <Loader />
 {:else}
     <div class="flex flex-col gap-10">
-        {#each getItems() as [_target, items]}
+        {#each mainItems as [_target, items]}
             <div class="flex flex-col gap-6">
                 <Title level={2} variant="subsection">
                     {items[0].recipientDisplayName}
@@ -54,6 +52,10 @@
     </div>
 
     {#if tipping.isEnabled}
-        <Tipjar />
+        {#if standaloneFoundationDonation}
+            <Tipjar standalone={true} />
+        {:else}
+            <Tipjar />
+        {/if}
     {/if}
 {/if}

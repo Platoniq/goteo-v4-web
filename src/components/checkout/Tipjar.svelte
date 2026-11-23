@@ -10,6 +10,8 @@
     import CurrencyInput from "../library/inputs/CurrencyInput.svelte";
     import Title from "../library/typography/Title.svelte";
 
+    let { standalone = false }: { standalone?: boolean } = $props();
+
     let money = $state<MoneyInput>({
         amount: Number(tipping.defaultAmount),
         currency: DEFAULT_CURRENCY,
@@ -22,24 +24,45 @@
     );
 
     onMount(() => {
+        const existing = $cartByRecipient[tipping.tipjarIri]?.[0];
+        if (existing) {
+            money = existing.money;
+            isChecked = true;
+        }
+
+        if (standalone) {
+            isChecked = true;
+        }
+
         toggleTip();
     });
 
     async function getTip(): Promise<Omit<CheckoutItem, "key">> {
-        if ($cartByRecipient[tipping.tipjarIri]) {
-            return $cartByRecipient[tipping.tipjarIri][0];
-        }
-
+        const existing = $cartByRecipient[tipping.tipjarIri]?.[0];
         const { data: tipjar } = await apiTipjarsIdGet({ path: { id: tipping.tipjarId } });
+        const name =
+            $t("common.footer.navigation.aboutGoteo.platoniqFoundation") ||
+            tipjar?.name ||
+            existing?.recipientDisplayName ||
+            $t("pages.checkout.tipjar.standaloneTitle");
+
+        if (existing) {
+            return {
+                ...existing,
+                title: name,
+                recipientDisplayName: name,
+                target: tipjar?.accounting ?? existing.target,
+            };
+        }
 
         return {
             kind: "tip",
             type: "single",
             quantity: 1,
-            title: $t("domain.tipping.title"),
+            title: name,
             money: { amount: Number(tipping.defaultAmount), currency: DEFAULT_CURRENCY },
             recipient: tipping.tipjarIri,
-            recipientDisplayName: tipjar?.name!,
+            recipientDisplayName: name,
             target: tipjar?.accounting!,
         };
     }
@@ -60,7 +83,9 @@
             return;
         }
 
-        setTip(newMoney);
+        if (isChecked) {
+            setTip(newMoney);
+        }
     }
 
     function toggleTip() {
@@ -80,8 +105,14 @@
 <div class="flex w-auto flex-col gap-4">
     <div class="flex flex-col gap-2">
         <Title level={2} variant="subsection">
-            {$t("pages.checkout.tipjar.community")}
+            {standalone
+                ? $t("pages.checkout.tipjar.standaloneTitle")
+                : $t("pages.checkout.tipjar.community")}
         </Title>
+
+        {#if standalone}
+            <p class="text-content text-sm">{$t("pages.checkout.tipjar.standaloneDescription")}</p>
+        {/if}
 
         <CurrencyInput
             amount={money.amount}
@@ -93,14 +124,16 @@
         />
     </div>
 
-    <div>
-        <Checkbox
-            id="donation-checkbox"
-            bind:checked={isChecked}
-            onchange={toggleTip}
-            class="gap-2"
-        >
-            <span class="text-secondary">{$t("pages.checkout.tipjar.checkboxLabel")}</span>
-        </Checkbox>
-    </div>
+    {#if !standalone}
+        <div>
+            <Checkbox
+                id="donation-checkbox"
+                bind:checked={isChecked}
+                onchange={toggleTip}
+                class="gap-2"
+            >
+                <span class="text-secondary">{$t("pages.checkout.tipjar.checkboxLabel")}</span>
+            </Checkbox>
+        </div>
+    {/if}
 </div>
