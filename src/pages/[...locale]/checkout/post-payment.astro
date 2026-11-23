@@ -104,25 +104,27 @@ if (session && checkoutId) {
                 t.accounting.owner?.includes("/v4/projects/"),
             );
 
-            const projectDataPromises = projectTargets.map(async ({ accounting, accountingUrl }) => {
-                try {
-                    const projectId = extractId(accounting.owner);
-                    if (!projectId) return null;
+            const projectDataPromises = projectTargets.map(
+                async ({ accounting, accountingUrl }) => {
+                    try {
+                        const projectId = extractId(accounting.owner);
+                        if (!projectId) return null;
 
-                    const { data: project } = await apiProjectsIdOrSlugGet({
-                        path: { idOrSlug: projectId },
-                        headers: authHeaders,
-                    });
+                        const { data: project } = await apiProjectsIdOrSlugGet({
+                            path: { idOrSlug: projectId },
+                            headers: authHeaders,
+                        });
 
-                    // This is the project's own accounting, so its balance is the raised amount.
-                    return project
-                        ? mapProjectToCard(project, accounting.balance as Money | undefined)
-                        : null;
-                } catch (error) {
-                    console.error("Error fetching project data:", error);
-                    return null;
-                }
-            });
+                        // This is the project's own accounting, so its balance is the raised amount.
+                        return project
+                            ? mapProjectToCard(project, accounting.balance as Money | undefined)
+                            : null;
+                    } catch (error) {
+                        console.error("Error fetching project data:", error);
+                        return null;
+                    }
+                },
+            );
 
             donatedProjects = (await Promise.all(projectDataPromises)).filter(
                 Boolean,

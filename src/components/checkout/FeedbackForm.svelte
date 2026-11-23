@@ -82,7 +82,9 @@
                     {#each feedbackItems() as { project, support }, index}
                         <div class="flex flex-col gap-3">
                             <h1 class="text-lg font-bold text-black">
-                                {$t("pages.checkout.verify.approved.formReview.crowdfundingProject")}
+                                {$t(
+                                    "pages.checkout.verify.approved.formReview.crowdfundingProject",
+                                )}
                                 <a
                                     href={`/project/${project.slug}`}
                                     class="text-secondary underline underline-offset-1"
