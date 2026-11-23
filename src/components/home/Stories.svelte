@@ -4,7 +4,9 @@
 </script>
 
 <section class="wrapper py-16">
-    <div class="flex flex-col gap-0 overflow-hidden rounded-3xl bg-white shadow-sm lg:flex-row">
+    <div
+        class="mt-12 flex flex-col gap-0 overflow-hidden rounded-3xl bg-white shadow-sm lg:flex-row"
+    >
         <!-- Content Section -->
         <div
             class="border-purple-soft flex flex-col justify-between gap-6 rounded-l-3xl border border-r-0 bg-white p-6 md:gap-8 md:py-6 md:pr-10 md:pl-6 lg:min-h-121 lg:w-173"

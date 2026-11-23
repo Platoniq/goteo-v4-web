@@ -10,7 +10,7 @@ import Blog from "../../components/home/Blog.astro";
 import Matchfunding from "../../components/home/Matchfunding.astro";
 import Banners from "../../components/home/HomeBanners.svelte";
 // Disabled sections, re-enable the import along with the component below:
-// import Stories from "../../components/home/Stories.svelte";
+import Stories from "../../components/home/Stories.svelte";
 // import Resources from "../../components/home/Resources.astro";
 import { isSupportedLocale } from "../../i18n/locales";
 import { bannerRepository } from "../../repositories/banners";
@@ -49,7 +49,7 @@ const featuredUsers = await getFeaturedUsers(lang);
         <Stats />
         <Matchfunding />
         <!-- Uncomment the matching import at the top when enabling either of these. -->
-        <!-- <Stories client:load /> -->
+        <Stories client:load />
         <CampaignsTabs />
         {featuredUsers.length > 0 && <FeaturedUsers users={featuredUsers} client:visible />}
         <!-- <Resources /> -->

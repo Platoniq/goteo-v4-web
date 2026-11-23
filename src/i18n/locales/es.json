@@ -516,6 +516,8 @@
         "community": "Quiero apoyar a la Fundación Platoniq",
         "checkboxLabel": "Impulsar una sociedad más justa y solidaria",
         "input": "Ingrese monto libre",
+        "standaloneTitle": "Donar a la Fundación Platoniq",
+        "standaloneDescription": "Puedes hacer una donación directa a la Fundación Platoniq sin apoyar un proyecto concreto.",
         "error": {
           "invalidAmount": "La cantidad mínima es de 1€"
         }
