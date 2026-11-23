@@ -25,16 +25,18 @@
     }
 
     let feedbackItems = $derived(() =>
-        projects.map((project) => {
-            const iri = client.buildUrl({
-                url: apiProjectsIdOrSlugGetUrl,
-                path: { idOrSlug: project.id },
-            });
+        projects
+            .map((project) => {
+                const iri = client.buildUrl({
+                    url: apiProjectsIdOrSlugGetUrl,
+                    path: { idOrSlug: project.id },
+                });
 
-            const support = projectSupports.find((ps) => iri.endsWith(ps.project!))!;
+                const support = projectSupports.find((ps) => iri.endsWith(ps.project!));
 
-            return { project, support };
-        }),
+                return support ? { project, support } : null;
+            })
+            .filter((item): item is { project: Project; support: ProjectSupport } => item !== null),
     );
 </script>
 
@@ -65,40 +67,42 @@
             </RadioButton>
         </fieldset>
 
-        <div class="mt-6 flex w-full max-w-167 flex-col gap-6">
-            <div class="flex w-full max-w-md flex-col gap-4">
-                <Title level={2} variant="subsection">
-                    {$t("pages.checkout.verify.approved.formReview.title")}
-                </Title>
-                <p class="text-content">
-                    {$t("pages.checkout.verify.approved.formReview.description")}
-                </p>
-            </div>
+        {#if feedbackItems().length > 0}
+            <div class="mt-6 flex w-full max-w-167 flex-col gap-6">
+                <div class="flex w-full max-w-md flex-col gap-4">
+                    <Title level={2} variant="subsection">
+                        {$t("pages.checkout.verify.approved.formReview.title")}
+                    </Title>
+                    <p class="text-content">
+                        {$t("pages.checkout.verify.approved.formReview.description")}
+                    </p>
+                </div>
 
-            <div class="mb-10 flex flex-col gap-7">
-                {#each feedbackItems() as { project, support }, index}
-                    <div class="flex flex-col gap-3">
-                        <h1 class="text-lg font-bold text-black">
-                            {$t("pages.checkout.verify.approved.formReview.crowdfundingProject")}
-                            <a
-                                href={`/project/${project.slug}`}
-                                class="text-secondary underline underline-offset-1"
-                                >{project.title}</a
-                            >
-                        </h1>
-                        <CommentCard
-                            {project}
-                            {support}
-                            onUpdate={(updatedSupport) => {
-                                projectSupports = projectSupports.map((s) =>
-                                    s.id === updatedSupport.id ? updatedSupport : s,
-                                );
-                            }}
-                        />
-                    </div>
-                {/each}
+                <div class="mb-10 flex flex-col gap-7">
+                    {#each feedbackItems() as { project, support }, index}
+                        <div class="flex flex-col gap-3">
+                            <h1 class="text-lg font-bold text-black">
+                                {$t("pages.checkout.verify.approved.formReview.crowdfundingProject")}
+                                <a
+                                    href={`/project/${project.slug}`}
+                                    class="text-secondary underline underline-offset-1"
+                                    >{project.title}</a
+                                >
+                            </h1>
+                            <CommentCard
+                                {project}
+                                {support}
+                                onUpdate={(updatedSupport) => {
+                                    projectSupports = projectSupports.map((s) =>
+                                        s.id === updatedSupport.id ? updatedSupport : s,
+                                    );
+                                }}
+                            />
+                        </div>
+                    {/each}
+                </div>
             </div>
-        </div>
+        {/if}
     </form>
     <div id="feedback-error-content" class="mt-4 text-center text-red-500"></div>
 </div>
