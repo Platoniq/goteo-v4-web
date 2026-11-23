@@ -5,6 +5,7 @@
     import { cartAmount, cartByRecipient, checkoutHydrated } from "../../stores/checkoutsStore";
     import { formatCurrency } from "../../utils/currencies";
     import { multiplyMoney, sumMoney } from "../../utils/money";
+    import * as tipping from "../../utils/tipping";
     import CollapsibleBox from "../library/layout/CollapsibleBox.svelte";
     import Thtml from "../library/typography/Thtml.svelte";
     import Title from "../library/typography/Title.svelte";
@@ -71,8 +72,13 @@
             <hr class="bg-secondary my-0 h-px border-none" />
 
             <div class="flex flex-col gap-2 pt-4">
-                {#each recipients as [_, items]}
-                    {@const name = items[0].recipientDisplayName}
+                {#each recipients as [recipient, items]}
+                    {@const name =
+                        recipient === tipping.tipjarIri && tipping.isEnabled
+                            ? $t("common.footer.navigation.aboutGoteo.platoniqFoundation") ||
+                              items[0].recipientDisplayName ||
+                              $t("pages.checkout.tipjar.standaloneTitle")
+                            : items[0].recipientDisplayName}
                     {@const amount = sumMoney(items.map((i) => multiplyMoney(i.money, i.quantity)))}
                     <p>
                         <Thtml
