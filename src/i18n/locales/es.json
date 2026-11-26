@@ -2531,6 +2531,9 @@
       "notFound": "Usuario no encontrado"
     },
     "login": {
+      "title": "Inicia sesión",
+      "description": "Entra en Goteo para apoyar proyectos y gestionar los tuyos.",
+      "submit": "Entrar",
       "error": {
         "invalidCredentials": "Correo electrónico o contraseña inválidos.",
         "unexpectedLogin": "Error al iniciar sesión. Por favor, inténtalo de nuevo más tarde.",
