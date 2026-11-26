@@ -2297,6 +2297,9 @@
       "notFound": "User not found"
     },
     "login": {
+      "title": "Log in",
+      "description": "Log in to Goteo to support projects and manage your own.",
+      "submit": "Log in",
       "error": {
         "invalidCredentials": "Invalid email or password.",
         "unexpectedLogin": "Error logging in. Please try again later.",

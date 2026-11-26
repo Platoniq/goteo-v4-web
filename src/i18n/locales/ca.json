@@ -2297,6 +2297,9 @@
       "notFound": "Usuari no trobat"
     },
     "login": {
+      "title": "Inicia sessió",
+      "description": "Entra a Goteo per donar suport a projectes i gestionar els teus.",
+      "submit": "Entra",
       "error": {
         "invalidCredentials": "Correu electrònic o contrasenya invàlids.",
         "unexpectedLogin": "Error en iniciar sessió. Si us plau, torna-ho a intentar més tard.",
