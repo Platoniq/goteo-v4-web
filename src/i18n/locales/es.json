@@ -2824,6 +2824,31 @@
           "description": "Puedes copiar el enlace para enviarlo y también compartirla en Facebook o X."
         }
       }
+    },
+    "contact": {
+      "title": "Contacto",
+      "description": "Contacta con el equipo de Goteo: dudas sobre proyectos, campañas, matchfunding o colaboraciones.",
+      "intro": "¿Tienes alguna duda, sugerencia o propuesta? Cuéntanosla y te responderemos lo antes posible.",
+      "form": {
+        "name": "Tu nombre",
+        "email": "Tu correo electrónico",
+        "emailHelper": "Solo lo usaremos para responderte.",
+        "subject": "Sobre qué quieres escribirnos",
+        "message": "Cuéntanos los detalles de tu consulta...",
+        "messageHelper": "Escribe al menos 10 caracteres.",
+        "submit": "Enviar",
+        "validation": {
+          "required": "Este campo es obligatorio.",
+          "emailInvalid": "Introduce un correo electrónico válido.",
+          "messageTooShort": "El mensaje debe tener al menos 10 caracteres.",
+          "tooLong": "El texto es demasiado largo."
+        }
+      },
+      "success": "¡Mensaje enviado! Gracias por escribirnos, te responderemos lo antes posible.",
+      "error": {
+        "spam": "No hemos podido enviar tu mensaje. Espera unos segundos e inténtalo de nuevo.",
+        "unexpected": "No ha sido posible enviar tu mensaje. Inténtalo de nuevo más tarde."
+      }
     }
   }
 }

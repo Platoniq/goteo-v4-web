@@ -1,5 +1,6 @@
 import { deleteBanner, saveBanner } from "./banners";
 import { saveBlogPost, setBlogPostPublished } from "./blog";
+import { contact } from "./contact";
 import { saveFeaturedUsers } from "./featuredUsers";
 import { saveFooter } from "./footer";
 import { createHeaderLogo, deleteHeaderLogo, getHeaderLogoData } from "./headerLogo";
@@ -20,6 +21,7 @@ import { resetThemeColors, saveThemeColors } from "./themeColors";
 export const server = {
     register,
     payment,
+    contact,
     saveBanner,
     deleteBanner,
     saveBlogPost,
