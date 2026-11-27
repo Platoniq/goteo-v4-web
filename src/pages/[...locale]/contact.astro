@@ -1,0 +1,48 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import App from "../../layouts/App.svelte";
+import BackButton from "../../components/library/buttons/BackButton.svelte";
+import Comments from "../../components/icons/Comments.svelte";
+import ContactForm from "../../components/contact/ContactForm.svelte";
+
+const { t, lang } = Astro.locals;
+---
+
+<Layout title={t("pages.contact.title")} description={t("pages.contact.description")}>
+    <App client:load locale={lang}>
+        <div class="wrapper">
+            <div class="flex flex-col gap-6 pt-4 pb-20 lg:flex-row lg:items-start lg:gap-12">
+                <div class="flex max-w-2xl flex-1 flex-col gap-6">
+                    <BackButton client:idle>{t("common.back")}</BackButton>
+                    <div class="flex flex-col gap-2">
+                        <h1 class="text-secondary text-4xl leading-12 font-bold">
+                            {t("pages.contact.title")}
+                        </h1>
+                        <p class="text-content text-base">{t("pages.contact.intro")}</p>
+                    </div>
+                    <ContactForm client:load />
+                </div>
+
+                <aside
+                    class="border-grey flex w-full flex-col gap-4 rounded-2xl border bg-white p-6 shadow-sm lg:sticky lg:top-(--sticky-top) lg:w-100"
+                >
+                    <div class="flex size-8 items-center justify-center rounded-full">
+                        <Comments class="text-secondary size-6" />
+                    </div>
+                    <h2 class="text-secondary text-xl leading-7 font-bold">
+                        {t("pages.contact.faqCard.title")}
+                    </h2>
+                    <p class="text-content text-sm leading-6">
+                        {t("pages.contact.faqCard.description")}
+                    </p>
+                    <a
+                        href="/faqs"
+                        class="bg-variant1 text-secondary focus:ring-primary mt-2 flex w-fit items-center justify-center gap-2 rounded-3xl px-6 py-4 text-base leading-normal font-bold no-underline transition-all duration-200 hover:opacity-90 focus:ring-2 focus:outline-none"
+                    >
+                        {t("pages.contact.faqCard.cta")}
+                    </a>
+                </aside>
+            </div>
+        </div>
+    </App>
+</Layout>
