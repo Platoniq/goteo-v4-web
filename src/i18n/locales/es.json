@@ -2848,6 +2848,11 @@
       "error": {
         "spam": "No hemos podido enviar tu mensaje. Espera unos segundos e inténtalo de nuevo.",
         "unexpected": "No ha sido posible enviar tu mensaje. Inténtalo de nuevo más tarde."
+      },
+      "faqCard": {
+        "title": "¿Ya has mirado las preguntas frecuentes?",
+        "description": "Muchas dudas sobre crowdfunding, donaciones o cómo impulsar tu proyecto ya tienen respuesta en las FAQs, y pueden ahorrarte la espera.",
+        "cta": "Ver preguntas frecuentes"
       }
     }
   }
